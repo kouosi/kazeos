@@ -76,9 +76,6 @@ pub fn init(fb: *limine.Framebuffer) void {
     clearScreen(bg_color);
     cursor_x = 0;
     cursor_y = 0;
-    for (0..100) |i| {
-        std.log.err("Inogen {}", .{i});
-    }
 }
 
 pub fn panic(msg: []const u8) void {
