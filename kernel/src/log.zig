@@ -29,5 +29,5 @@ pub fn init(fb: *limine.Framebuffer) void {
 const std = @import("std");
 const builtin = @import("builtin");
 const limine = @import("limine");
-const serial = @import("log/serial.zig");
+const serial = @import("arch.zig").serial;
 const term = @import("log/term.zig");

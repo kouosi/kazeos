@@ -34,6 +34,7 @@ export fn _start() callconv(.C) noreturn {
     }
 
     std.log.info("Hello, World!", .{});
+    arch.cpuInit();
     halt();
 }
 
@@ -41,3 +42,4 @@ const std = @import("std");
 const builtin = @import("builtin");
 const limine = @import("limine");
 const log = @import("log.zig");
+const arch = @import("arch.zig");

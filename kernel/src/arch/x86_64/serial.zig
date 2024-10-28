@@ -20,6 +20,12 @@ pub fn writeByte(value: u8) void {
     outb(0x3f8, value);
 }
 
+pub fn write(msg: []const u8) void {
+    for (msg) |value| {
+        writeByte(value);
+    }
+}
+
 pub fn init() void {
     if (is_init) return;
     outb(0x3f8 + 1, 0x00);
