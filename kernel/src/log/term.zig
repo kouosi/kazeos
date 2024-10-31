@@ -20,7 +20,11 @@ fn writeChar(x: usize, y: usize, val: u8, color: u32) void {
     }
 }
 
-pub fn write(msg: []const u8) void {
+pub fn print(msg: []const u8) void {
+    write(msg, 0xffffff);
+}
+
+pub fn write(msg: []const u8, color: u32) void {
     const max_width = framebuffer.width / font.width;
     const max_height = framebuffer.height / font.height;
 
@@ -41,7 +45,7 @@ pub fn write(msg: []const u8) void {
                         scroll();
                     }
                 }
-                writeChar(cursor_x, cursor_y, ch, 0xffffff);
+                writeChar(cursor_x, cursor_y, ch, color);
                 cursor_x += 1;
             },
         }
@@ -78,12 +82,11 @@ pub fn init(fb: *limine.Framebuffer) void {
     cursor_y = 0;
 }
 
-pub fn panic(msg: []const u8) void {
+pub fn setPanic() void {
     @setCold(true);
-    clearScreen(0xbb0000);
-    cursor_y = 0;
-    cursor_x = 0;
-    write(msg);
+    const fb = @as([*]u64, @ptrCast(@alignCast(framebuffer.address)));
+    const fb_size = (framebuffer.width * framebuffer.height) / 2;
+    for (fb[0..fb_size]) |*value| value.* |= 0x0088000000880000;
 }
 
 const std = @import("std");

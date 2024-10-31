@@ -1,8 +1,20 @@
-fn print(comptime format: []const u8, args: anytype) void {
+inline fn print(level: std.log.Level, comptime format: []const u8, args: anytype) void {
     var buf: [1024]u8 = undefined;
+
     const msg = std.fmt.bufPrint(&buf, format, args) catch return;
-    serial.write(msg);
-    term.write(msg);
+
+    serial.write(msg, switch (level) {
+        .err => .red,
+        .warn => .yellow,
+        .debug => .blue,
+        .info => .white,
+    });
+    term.write(msg, switch (level) {
+        .err => 0xcc241d,
+        .warn => 0xfabd2f,
+        .debug => 0x458588,
+        .info => 0x928374,
+    });
 }
 
 pub fn logFn(
@@ -13,12 +25,7 @@ pub fn logFn(
 ) void {
     const scope_prefix = comptime if (scope != .default) "(" ++ @tagName(scope) ++ ")" else "";
     const prefix = comptime level.asText() ++ scope_prefix ++ ": ";
-    print(prefix ++ format ++ "\n", args);
-}
-
-pub fn panic(msg: []const u8) void {
-    serial.write(msg);
-    term.panic(msg);
+    print(level, prefix ++ format ++ "\n", args);
 }
 
 pub fn init(fb: *limine.Framebuffer) void {

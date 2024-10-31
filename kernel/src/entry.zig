@@ -3,17 +3,22 @@ pub const std_options: std.Options = .{ .logFn = @import("log.zig").logFn };
 pub export var base_revision: limine.BaseRevision = .{ .revision = 2 };
 pub export var fb_req: limine.FramebufferRequest = .{};
 pub export var mmap_req: limine.MemoryMapRequest = .{};
+pub export var hhdm_req: limine.HhdmRequest = .{};
+pub export var krn_file_req: limine.KernelFileRequest = .{};
 
-pub fn panic(msg: []const u8, _: ?*std.builtin.StackTrace, last_ret_addr: ?usize) noreturn {
+pub fn panic(msg: []const u8, _: ?*std.builtin.StackTrace, first_trace_addr: ?usize) noreturn {
     @setCold(true);
-    var buff: [1024]u8 = undefined;
-    const fmt = std.fmt.bufPrint(
-        &buff,
-        "PANIC: {s}\nADDR: {x}",
-        .{ msg, last_ret_addr orelse 0 },
-    ) catch arch.halt();
-    log.panic(fmt);
-    arch.halt();
+
+    const trace_addr = first_trace_addr orelse @returnAddress();
+    debug.panicHandler(msg, trace_addr);
+}
+
+fn getLimineResponse(res_type: type, req: anytype) *res_type {
+    if (req.response) |response| {
+        return response;
+    } else {
+        std.debug.panic("Unable to get {s} found null", .{@typeName(res_type)});
+    }
 }
 
 export fn _start() callconv(.C) noreturn {
@@ -28,13 +33,17 @@ export fn _start() callconv(.C) noreturn {
         log.init(fb_res.framebuffers()[0]);
     }
 
+    _ = getLimineResponse(limine.HhdmResponse, hhdm_req);
+    _ = getLimineResponse(limine.KernelFileResponse, krn_file_req);
+
     std.log.info("Hello, World!", .{});
     arch.cpuInit();
-    arch.halt();
+
+    unreachable;
 }
 
 const std = @import("std");
-const builtin = @import("builtin");
 const limine = @import("limine");
 const log = @import("log.zig");
 const arch = @import("arch.zig");
+const debug = @import("debug.zig");

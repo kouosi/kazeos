@@ -20,7 +20,29 @@ pub fn writeByte(value: u8) void {
     outb(0x3f8, value);
 }
 
-pub fn write(msg: []const u8) void {
+pub const Color = enum(u8) { red, yellow, blue, white, reset, panic };
+
+pub fn getColorCode(color: Color) []const u8 {
+    return switch (color) {
+        .red => "\x1b[31m",
+        .yellow => "\x1b[33m",
+        .blue => "\x1b[34m",
+        .white => "\x1b[37m",
+        .reset => "\x1b[0m",
+        .panic => "\x1b[1;37;41m",
+    };
+}
+
+pub fn write(msg: []const u8, color: Color) void {
+    for (getColorCode(color)) |value| writeByte(value);
+    defer for (getColorCode(Color.reset)) |value| writeByte(value);
+
+    for (msg) |value| {
+        writeByte(value);
+    }
+}
+
+pub fn print(msg: []const u8) void {
     for (msg) |value| {
         writeByte(value);
     }
