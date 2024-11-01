@@ -35,6 +35,9 @@ export fn _start() callconv(.C) noreturn {
 
     _ = getLimineResponse(limine.HhdmResponse, hhdm_req);
     _ = getLimineResponse(limine.KernelFileResponse, krn_file_req);
+    const mmap_res = getLimineResponse(limine.MemoryMapResponse, mmap_req);
+
+    pmm.init(mmap_res.entries());
 
     std.log.info("Hello, World!", .{});
     arch.cpuInit();
@@ -46,4 +49,5 @@ const std = @import("std");
 const limine = @import("limine");
 const log = @import("log.zig");
 const arch = @import("arch.zig");
+const pmm = @import("mem/pmm.zig");
 const debug = @import("debug.zig");
