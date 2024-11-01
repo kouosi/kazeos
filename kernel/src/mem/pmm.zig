@@ -28,12 +28,15 @@ inline fn markPagesFree(paddr: usize, page_count: usize) void {
         markPageFree(paddr + std.mem.page_size * i);
     }
 }
-
-inline fn earlyAlloc(mmap_info: []*limine.MemoryMapEntry, size: usize) usize {
+inline fn earlyAlloc(comptime T: type, mmap_info: []*limine.MemoryMapEntry, n: usize) []T {
+    var temp: []T = undefined;
     for (mmap_info) |entry| {
-        if (entry.kind == .usable and entry.length >= size) {
-            std.log.debug("Found bitmap memory at 0x{x}", .{vmm.getVaddr(entry.base)});
-            return vmm.getVaddr(entry.base);
+        if (entry.kind == .usable and entry.length >= n * @sizeOf(T)) {
+            const addr = vmm.getVaddr(entry.base);
+            std.log.debug("Found bitmap memory at 0x{x}", .{addr});
+            temp.len = n;
+            temp.ptr = @ptrFromInt(addr);
+            return temp;
         }
     }
     @panic("Out of memory");
@@ -102,8 +105,9 @@ pub fn freePages(base_addr: usize, page_count: usize) void {
 
 pub fn init(mmap_info: []*limine.MemoryMapEntry) void {
     const total_pages = getTotalPages(mmap_info);
-    bitmap.len = total_pages;
-    bitmap.ptr = @ptrFromInt(earlyAlloc(mmap_info, total_pages));
+    bitmap = earlyAlloc(u1, mmap_info, total_pages);
+    // Mark out bitmap memory as used
+    defer markPagesUsed(vmm.getPaddr(@intFromPtr(bitmap.ptr)), (total_pages / std.mem.page_size) + 1);
 
     @memset(bitmap, used_page);
 
